@@ -1,0 +1,10 @@
+# Arquivos compilados do Java
+*.class
+bin/
+out/
+
+# Arquivos de dados gerados pelo programa
+/data/
+
+# Arquivos do VSCode
+.vscode/
