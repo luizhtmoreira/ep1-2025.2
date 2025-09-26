@@ -10,16 +10,19 @@ public class Hospital {
     private List<Paciente> pacientes;
     private List<Medico> medicos;
     private List<Consulta> consultas;
+    private List<Especialidade> especialidades;
 
     public Hospital() {
         this.pacientes = new ArrayList<>();
         this.medicos = new ArrayList<>();
         this.consultas = new ArrayList<>();
+        this.especialidades = new ArrayList<>();
         System.out.println("Carregando dados existentes...");
         Persistencia.carregarDados(this);
     }
     
-    // VERSÕES PÚBLICAS QUE SALVAM
+    // --- MÉTODOS PÚBLICOS QUE SALVAM ---
+
     public void cadastrarPaciente(String nome, String cpf, int idade) {
         if(buscarPacientePorCpf(cpf) != null) {
              System.out.println("Erro: Já existe um paciente cadastrado com o CPF " + cpf);
@@ -30,7 +33,17 @@ public class Hospital {
         Persistencia.salvarPacientes(this.pacientes);
     }
 
-    public void cadastrarMedico(String nome, String cpf, String crm, String especialidade) {
+    public void cadastrarEspecialidade(String nome) {
+        if (buscarEspecialidadePorNome(nome) != null) {
+            System.out.println("Erro: Especialidade já cadastrada.");
+            return;
+        }
+        cadastrarEspecialidadeSemSalvar(nome);
+        System.out.println("Especialidade '" + nome + "' cadastrada com sucesso!");
+        Persistencia.salvarEspecialidades(this.especialidades);
+    }
+
+    public void cadastrarMedico(String nome, String cpf, String crm, Especialidade especialidade) {
         if(buscarMedicoPorCrm(crm) != null) {
             System.out.println("Erro: Já existe um médico cadastrado com o CRM " + crm);
             return;
@@ -52,13 +65,19 @@ public class Hospital {
         Persistencia.salvarConsultas(this.consultas);
     }
 
-    // VERSÕES "INTERNAS" QUE NÃO SALVAM (USADAS PELA PERSISTÊNCIA)
+    // --- MÉTODOS "INTERNOS" SEM SALVAR (USADOS PELA PERSISTÊNCIA) ---
+
     public void cadastrarPacienteSemSalvar(String nome, String cpf, int idade) {
         Paciente novoPaciente = new Paciente(nome, cpf, idade);
         this.pacientes.add(novoPaciente);
     }
 
-    public void cadastrarMedicoSemSalvar(String nome, String cpf, String crm, String especialidade) {
+    public void cadastrarEspecialidadeSemSalvar(String nome) {
+        Especialidade novaEspecialidade = new Especialidade(nome);
+        this.especialidades.add(novaEspecialidade);
+    }
+
+    public void cadastrarMedicoSemSalvar(String nome, String cpf, String crm, Especialidade especialidade) {
         Medico novoMedico = new Medico(nome, cpf, crm, especialidade);
         this.medicos.add(novoMedico);
     }
@@ -68,7 +87,8 @@ public class Hospital {
         this.consultas.add(novaConsulta);
     }
 
-    // MÉTODOS DE BUSCA E GETTERS
+    // --- MÉTODOS DE BUSCA E GETTERS ---
+    
     public Paciente buscarPacientePorCpf(String cpf) {
         for (Paciente p : this.pacientes) {
             if (p.getCpf().equals(cpf)) {
@@ -87,6 +107,15 @@ public class Hospital {
         return null;
     }
 
+    public Especialidade buscarEspecialidadePorNome(String nome) {
+        for (Especialidade e : this.especialidades) {
+            if (e.getNome().equalsIgnoreCase(nome)) {
+                return e;
+            }
+        }
+        return null;
+    }
+
     public List<Paciente> getPacientes() {
         return pacientes;
     }
@@ -97,5 +126,9 @@ public class Hospital {
 
     public List<Consulta> getConsultas() {
         return consultas;
+    }
+
+    public List<Especialidade> getEspecialidades() {
+        return especialidades;
     }
 }

@@ -6,6 +6,7 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Scanner;
 import entities.Consulta;
+import entities.Especialidade;
 import entities.Hospital;
 import entities.Medico;
 import entities.Paciente;
@@ -26,11 +27,13 @@ public class Menu {
         while (opcao != 0) {
             System.out.println("\n---- Sistema de Gerenciamento Hospitalar ----");
             System.out.println("1. Cadastrar Paciente");
-            System.out.println("2. Cadastrar Médico");
-            System.out.println("3. Agendar Consulta");
-            System.out.println("4. Listar Pacientes");
-            System.out.println("5. Listar Médicos");
-            System.out.println("6. Listar Consultas");
+            System.out.println("2. Listar Pacientes");
+            System.out.println("3. Cadastrar Especialidade");
+            System.out.println("4. Listar Especialidades");
+            System.out.println("5. Cadastrar Médico");
+            System.out.println("6. Listar Médicos");
+            System.out.println("7. Agendar Consulta");
+            System.out.println("8. Listar Consultas");
             System.out.println("0. Sair");
             System.out.print("Escolha uma opção: ");
 
@@ -39,27 +42,108 @@ public class Menu {
 
                 switch (opcao) {
                     case 1: cadastrarPaciente(); break;
-                    case 2: cadastrarMedico(); break;
-                    case 3: agendarConsulta(); break;
-                    case 4: listarPacientes(); break;
-                    case 5: listarMedicos(); break;
-                    case 6: listarConsultas(); break;
+                    case 2: listarPacientes(); break;
+                    case 3: cadastrarEspecialidade(); break;
+                    case 4: listarEspecialidades(); break;
+                    case 5: cadastrarMedico(); break;
+                    case 6: listarMedicos(); break;
+                    case 7: agendarConsulta(); break;
+                    case 8: listarConsultas(); break;
                     case 0: System.out.println("Saindo do sistema..."); break;
                     default: System.out.println("Opção inválida. Tente novamente.");
                 }
-            } catch (NumberFormatException e) {
-                System.out.println("Erro: Entrada inválida. Por favor, digite um número.");
+            } catch (Exception e) {
+                System.out.println("Erro: Entrada inválida ou falha na operação. Tente novamente.");
                 opcao = -1;
             }
         }
         scanner.close();
     }
 
+    // --- MÉTODOS DE ESPECIALIDADE ---
+    private void cadastrarEspecialidade() {
+        System.out.println("\n--- Cadastro de Especialidade ---");
+        System.out.print("Nome da especialidade: ");
+        String nome = scanner.nextLine();
+        hospital.cadastrarEspecialidade(nome);
+    }
+
+    private void listarEspecialidades() {
+        System.out.println("\n--- Lista de Especialidades ---");
+        List<Especialidade> especialidades = hospital.getEspecialidades();
+        if (especialidades.isEmpty()) {
+            System.out.println("Nenhuma especialidade cadastrada.");
+        } else {
+            for (int i = 0; i < especialidades.size(); i++) {
+                System.out.println((i + 1) + ". " + especialidades.get(i).toString());
+            }
+        }
+    }
+
+    // --- MÉTODO DE CADASTRO DE MÉDICO (MODIFICADO) ---
+    private void cadastrarMedico() {
+        System.out.println("\n--- Cadastro de Médico ---");
+        if (hospital.getEspecialidades().isEmpty()) {
+            System.out.println("Erro: É necessário cadastrar ao menos uma especialidade antes de cadastrar um médico.");
+            return;
+        }
+
+        System.out.print("Nome: ");
+        String nome = scanner.nextLine();
+        System.out.print("CPF: ");
+        String cpf = scanner.nextLine();
+        System.out.print("CRM: ");
+        String crm = scanner.nextLine();
+
+        System.out.println("Selecione a especialidade:");
+        listarEspecialidades();
+        System.out.print("Escolha o número da especialidade: ");
+        int indiceEspecialidade = Integer.parseInt(scanner.nextLine()) - 1;
+        Especialidade especialidadeEscolhida = hospital.getEspecialidades().get(indiceEspecialidade);
+        
+        hospital.cadastrarMedico(nome, cpf, crm, especialidadeEscolhida);
+    }
+
+    // --- DEMAIS MÉTODOS (sem grandes alterações) ---
+    private void cadastrarPaciente() {
+        System.out.println("\n--- Cadastro de Paciente ---");
+        System.out.print("Nome: ");
+        String nome = scanner.nextLine();
+        System.out.print("CPF: ");
+        String cpf = scanner.nextLine();
+        System.out.print("Idade: ");
+        int idade = Integer.parseInt(scanner.nextLine());
+        hospital.cadastrarPaciente(nome, cpf, idade);
+    }
+    
+    private void listarPacientes() {
+        System.out.println("\n--- Lista de Pacientes ---");
+        List<Paciente> pacientes = hospital.getPacientes();
+        if (pacientes.isEmpty()) {
+            System.out.println("Nenhum paciente cadastrado.");
+        } else {
+            for (int i = 0; i < pacientes.size(); i++) {
+                System.out.println((i + 1) + ". " + pacientes.get(i).toString());
+            }
+        }
+    }
+
+    private void listarMedicos() {
+        System.out.println("\n--- Lista de Médicos ---");
+        List<Medico> medicos = hospital.getMedicos();
+        if (medicos.isEmpty()) {
+            System.out.println("Nenhum médico cadastrado.");
+        } else {
+            for (int i = 0; i < medicos.size(); i++) {
+                System.out.println((i + 1) + ". " + medicos.get(i).toString());
+            }
+        }
+    }
+
     private void agendarConsulta() {
         System.out.println("\n--- Agendamento de Consulta ---");
-
         if (hospital.getPacientes().isEmpty() || hospital.getMedicos().isEmpty()) {
-            System.out.println("Erro: É necessário ter ao menos um paciente e um médico cadastrados para agendar uma consulta.");
+            System.out.println("Erro: É necessário ter ao menos um paciente e um médico cadastrados.");
             return;
         }
 
@@ -77,7 +161,6 @@ public class Menu {
 
         System.out.print("Digite a data e hora da consulta (formato dd/MM/yyyy HH:mm): ");
         String dataHoraString = scanner.nextLine();
-        
         System.out.print("Digite o local da consulta (ex: Consultório 3): ");
         String local = scanner.nextLine();
 
@@ -104,54 +187,6 @@ public class Menu {
                 System.out.println("Status: " + consulta.getStatus());
             }
             System.out.println("---------------------------------");
-        }
-    }
-
-    private void cadastrarPaciente() {
-        System.out.println("\n--- Cadastro de Paciente ---");
-        System.out.print("Nome: ");
-        String nome = scanner.nextLine();
-        System.out.print("CPF: ");
-        String cpf = scanner.nextLine();
-        System.out.print("Idade: ");
-        int idade = Integer.parseInt(scanner.nextLine());
-        hospital.cadastrarPaciente(nome, cpf, idade);
-    }
-    
-    private void listarPacientes() {
-        System.out.println("\n--- Lista de Pacientes ---");
-        List<Paciente> pacientes = hospital.getPacientes();
-        if (pacientes.isEmpty()) {
-            System.out.println("Nenhum paciente cadastrado.");
-        } else {
-            for (int i = 0; i < pacientes.size(); i++) {
-                System.out.println((i + 1) + ". " + pacientes.get(i).toString());
-            }
-        }
-    }
-
-    private void cadastrarMedico() {
-        System.out.println("\n--- Cadastro de Médico ---");
-        System.out.print("Nome: ");
-        String nome = scanner.nextLine();
-        System.out.print("CPF: ");
-        String cpf = scanner.nextLine();
-        System.out.print("CRM: ");
-        String crm = scanner.nextLine();
-        System.out.print("Especialidade: ");
-        String especialidade = scanner.nextLine();
-        hospital.cadastrarMedico(nome, cpf, crm, especialidade);
-    }
-
-    private void listarMedicos() {
-        System.out.println("\n--- Lista de Médicos ---");
-        List<Medico> medicos = hospital.getMedicos();
-        if (medicos.isEmpty()) {
-            System.out.println("Nenhum médico cadastrado.");
-        } else {
-            for (int i = 0; i < medicos.size(); i++) {
-                System.out.println((i + 1) + ". " + medicos.get(i).toString());
-            }
         }
     }
 }
