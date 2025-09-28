@@ -11,12 +11,14 @@ public class Hospital {
     private List<Medico> medicos;
     private List<Consulta> consultas;
     private List<Especialidade> especialidades;
+    private List<PlanoDeSaude> planosDeSaude; // ADICIONE ESTA LINHA
 
     public Hospital() {
         this.pacientes = new ArrayList<>();
         this.medicos = new ArrayList<>();
         this.consultas = new ArrayList<>();
         this.especialidades = new ArrayList<>();
+        this.planosDeSaude = new ArrayList<>(); // ADICIONE ESTA LINHA
         System.out.println("Carregando dados existentes...");
         Persistencia.carregarDados(this);
     }
@@ -86,6 +88,32 @@ public class Hospital {
         Consulta novaConsulta = new Consulta(p, m, dataHora, local);
         this.consultas.add(novaConsulta);
     }
+
+    // --- MÉTODOS DE PLANO DE SAÚDE (NOVOS) ---
+
+public void cadastrarPlanoDeSaude(String nome) {
+    if (buscarPlanoPorNome(nome) != null) {
+        System.out.println("Erro: Plano de saúde já cadastrado.");
+        return;
+    }
+    PlanoDeSaude novoPlano = new PlanoDeSaude(nome);
+    this.planosDeSaude.add(novoPlano);
+    System.out.println("Plano '" + nome + "' cadastrado com sucesso!");
+    // Persistencia.salvarPlanos(this.planosDeSaude); // Adicionaremos a persistência depois
+}
+
+public PlanoDeSaude buscarPlanoPorNome(String nome) {
+    for (PlanoDeSaude p : this.planosDeSaude) {
+        if (p.getNome().equalsIgnoreCase(nome)) {
+            return p;
+        }
+    }
+    return null;
+}
+
+public List<PlanoDeSaude> getPlanosDeSaude() {
+    return planosDeSaude;
+}
 
     // --- MÉTODOS DE BUSCA E GETTERS ---
     
