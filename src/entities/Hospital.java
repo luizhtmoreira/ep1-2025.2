@@ -3,7 +3,10 @@ package entities;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import utils.Persistencia;
 
@@ -29,12 +32,43 @@ public class Hospital {
         Persistencia.carregarDados(this);
     }
 
-    // --- NOVO MÉTODO AUXILIAR ---
+    // --- MÉTODOS DE RELATÓRIOS ---
+
+    public List<Internacao> getPacientesInternados() {
+        return this.internacoes.stream()
+            .filter(i -> i.getDataSaida() == null)
+            .collect(Collectors.toList());
+    }
+
+    public long getNumeroDeConsultasPorMedico(Medico medico) {
+        return this.consultas.stream()
+            .filter(c -> c.getMedico().equals(medico) && c.getStatus().equals("CONCLUIDA"))
+            .count();
+    }
+
+    public Optional<Medico> getMedicoMaisAtivo() {
+        return this.medicos.stream()
+            .max(Comparator.comparing(m -> getNumeroDeConsultasPorMedico(m)));
+    }
+
+    public Optional<Especialidade> getEspecialidadeMaisProcurada() {
+        if (consultas.isEmpty()) {
+            return Optional.empty();
+        }
+        Map<Especialidade, Long> contagem = this.consultas.stream()
+            .filter(c -> c.getStatus().equals("CONCLUIDA"))
+            .collect(Collectors.groupingBy(c -> c.getMedico().getEspecialidade(), Collectors.counting()));
+
+        return contagem.entrySet().stream()
+            .max(Map.Entry.comparingByValue())
+            .map(Map.Entry::getKey);
+    }
+
+    // --- MÉTODOS EXISTENTES ---
+
     public void atualizarConsultasNoArquivo() {
         Persistencia.salvarConsultas(this.consultas);
     }
-
-    // --- MÉTODOS PÚBLICOS QUE SALVAM ---
 
     public void cadastrarQuarto(int numero) {
         if (buscarQuartoPorNumero(numero) != null) {
@@ -123,8 +157,6 @@ public class Hospital {
         Persistencia.salvarConsultas(this.consultas);
     }
     
-    // --- MÉTODOS "INTERNOS" SEM SALVAR ---
-
     public void cadastrarQuartoSemSalvar(int numero) {
         Quarto novoQuarto = new Quarto(numero);
         this.quartos.add(novoQuarto);
@@ -165,8 +197,6 @@ public class Hospital {
         Consulta novaConsulta = new Consulta(p, m, dataHora, local);
         this.consultas.add(novaConsulta);
     }
-    
-    // --- MÉTODOS DE BUSCA E GETTERS ---
     
     public Quarto buscarQuartoPorNumero(int numero) {
         for (Quarto q : this.quartos) {

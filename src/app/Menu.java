@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
@@ -49,6 +50,8 @@ public class Menu {
             System.out.println("15. Internar Paciente");
             System.out.println("16. Dar Alta a Paciente");
             System.out.println("17. Listar Internações");
+            System.out.println("\n---- RELATÓRIOS E ESTATÍSTICAS ----");
+            System.out.println("18. Ver Relatórios");
             System.out.println("0. Sair");
             System.out.print("Escolha uma opção: ");
 
@@ -72,6 +75,7 @@ public class Menu {
                     case 15: internarPaciente(); break;
                     case 16: darAltaPaciente(); break;
                     case 17: listarInternacoes(); break;
+                    case 18: exibirMenuRelatorios(); break;
                     case 0: System.out.println("A sair do sistema..."); break;
                     default: System.out.println("Opção inválida.");
                 }
@@ -83,6 +87,71 @@ public class Menu {
         scanner.close();
     }
     
+    private void exibirMenuRelatorios() {
+        System.out.println("\n--- Submenu de Relatórios ---");
+        System.out.println("1. Pacientes internados no momento");
+        System.out.println("2. Consultas concluídas por médico");
+        System.out.println("3. Estatísticas gerais (médico mais ativo, especialidade mais procurada)");
+        System.out.print("Escolha uma opção: ");
+        int opcao = Integer.parseInt(scanner.nextLine());
+        
+        switch (opcao) {
+            case 1:
+                relatorioPacientesInternados();
+                break;
+            case 2:
+                relatorioConsultasPorMedico();
+                break;
+            case 3:
+                relatorioEstatisticasGerais();
+                break;
+            default:
+                System.out.println("Opção inválida.");
+        }
+    }
+
+    private void relatorioPacientesInternados() {
+        System.out.println("\n--- Relatório: Pacientes Internados Atualmente ---");
+        List<Internacao> internados = hospital.getPacientesInternados();
+        if (internados.isEmpty()) {
+            System.out.println("Não há pacientes internados no momento.");
+        } else {
+            internados.forEach(System.out::println);
+        }
+    }
+
+    private void relatorioConsultasPorMedico() {
+        System.out.println("\n--- Relatório: Consultas Concluídas por Médico ---");
+        List<Medico> medicos = hospital.getMedicos();
+        if (medicos.isEmpty()) {
+            System.out.println("Nenhum médico cadastrado.");
+        } else {
+            for (Medico m : medicos) {
+                long numConsultas = hospital.getNumeroDeConsultasPorMedico(m);
+                System.out.println("- " + m.getNome() + " (" + m.getEspecialidade() + "): " + numConsultas + " consultas concluídas.");
+            }
+        }
+    }
+
+    private void relatorioEstatisticasGerais() {
+        System.out.println("\n--- Relatório: Estatísticas Gerais ---");
+        
+        Optional<Medico> medicoMaisAtivoOpt = hospital.getMedicoMaisAtivo();
+        if (medicoMaisAtivoOpt.isPresent()) {
+            Medico medico = medicoMaisAtivoOpt.get();
+            System.out.println("Médico mais ativo: " + medico.getNome() + " com " + hospital.getNumeroDeConsultasPorMedico(medico) + " consultas.");
+        } else {
+            System.out.println("Médico mais ativo: Não há dados de consultas concluídas.");
+        }
+
+        Optional<Especialidade> especialidadeMaisProcuradaOpt = hospital.getEspecialidadeMaisProcurada();
+        if (especialidadeMaisProcuradaOpt.isPresent()) {
+            System.out.println("Especialidade mais procurada: " + especialidadeMaisProcuradaOpt.get().getNome());
+        } else {
+            System.out.println("Especialidade mais procurada: Não há dados de consultas concluídas.");
+        }
+    }
+
     private void gerirConsulta() {
         System.out.println("\n--- Gerir Consulta ---");
         
