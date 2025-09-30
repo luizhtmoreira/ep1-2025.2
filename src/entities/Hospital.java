@@ -1,8 +1,10 @@
 package entities;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import utils.Persistencia;
 
 public class Hospital {
@@ -12,6 +14,8 @@ public class Hospital {
     private List<Consulta> consultas;
     private List<Especialidade> especialidades;
     private List<PlanoDeSaude> planosDeSaude;
+    private List<Quarto> quartos;
+    private List<Internacao> internacoes;
 
     public Hospital() {
         this.pacientes = new ArrayList<>();
@@ -19,8 +23,38 @@ public class Hospital {
         this.consultas = new ArrayList<>();
         this.especialidades = new ArrayList<>();
         this.planosDeSaude = new ArrayList<>();
-        System.out.println("Carregando dados existentes...");
+        this.quartos = new ArrayList<>();
+        this.internacoes = new ArrayList<>();
+        System.out.println("A carregar dados existentes...");
         Persistencia.carregarDados(this);
+    }
+
+    // --- MÉTODOS PÚBLICOS QUE SALVAM ---
+
+    public void cadastrarQuarto(int numero) {
+        if (buscarQuartoPorNumero(numero) != null) {
+            System.out.println("Erro: Quarto número " + numero + " já cadastrado.");
+            return;
+        }
+        cadastrarQuartoSemSalvar(numero);
+        System.out.println("Quarto " + numero + " cadastrado com sucesso!");
+        Persistencia.salvarQuartos(this.quartos);
+    }
+
+    public void internarPaciente(Paciente paciente, Medico medico, Quarto quarto, LocalDate dataEntrada) {
+        for (Internacao i : this.internacoes) {
+            if (i.getPaciente().equals(paciente) && i.getDataSaida() == null) {
+                System.out.println("Erro: O paciente " + paciente.getNome() + " já está internado.");
+                return;
+            }
+        }
+        if (quarto.isOcupado()) {
+            System.out.println("Erro: O quarto " + quarto.getNumero() + " já está ocupado.");
+            return;
+        }
+        internarPacienteSemSalvar(paciente, medico, quarto, dataEntrada);
+        System.out.println("Paciente " + paciente.getNome() + " internado com sucesso no quarto " + quarto.getNumero() + ".");
+        Persistencia.salvarInternacoes(this.internacoes);
     }
 
     public void cadastrarPaciente(String nome, String cpf, int idade) {
@@ -83,6 +117,19 @@ public class Hospital {
         agendarConsultaSemSalvar(paciente, medico, dataHora, local);
         Persistencia.salvarConsultas(this.consultas);
     }
+    
+    // --- MÉTODOS "INTERNOS" SEM SALVAR ---
+
+    public void cadastrarQuartoSemSalvar(int numero) {
+        Quarto novoQuarto = new Quarto(numero);
+        this.quartos.add(novoQuarto);
+    }
+
+    public void internarPacienteSemSalvar(Paciente paciente, Medico medico, Quarto quarto, LocalDate dataEntrada) {
+        quarto.ocupar();
+        Internacao novaInternacao = new Internacao(paciente, medico, quarto, dataEntrada);
+        this.internacoes.add(novaInternacao);
+    }
 
     public void cadastrarPacienteSemSalvar(String nome, String cpf, int idade) {
         Paciente novoPaciente = new Paciente(nome, cpf, idade);
@@ -113,7 +160,24 @@ public class Hospital {
         Consulta novaConsulta = new Consulta(p, m, dataHora, local);
         this.consultas.add(novaConsulta);
     }
+    
+    // --- MÉTODOS DE BUSCA E GETTERS ---
+    
+    public Quarto buscarQuartoPorNumero(int numero) {
+        for (Quarto q : this.quartos) {
+            if (q.getNumero() == numero) {
+                return q;
+            }
+        }
+        return null;
+    }
 
+    public List<Quarto> getQuartosLivres() {
+        return this.quartos.stream()
+            .filter(quarto -> !quarto.isOcupado())
+            .collect(Collectors.toList());
+    }
+    
     public Paciente buscarPacientePorCpf(String cpf) {
         for (Paciente p : this.pacientes) {
             if (p.getCpf().equals(cpf)) {
@@ -155,4 +219,6 @@ public class Hospital {
     public List<Consulta> getConsultas() { return consultas; }
     public List<Especialidade> getEspecialidades() { return especialidades; }
     public List<PlanoDeSaude> getPlanosDeSaude() { return planosDeSaude; }
+    public List<Quarto> getQuartos() { return quartos; }
+    public List<Internacao> getInternacoes() { return internacoes; }
 }

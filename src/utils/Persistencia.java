@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -20,18 +21,41 @@ public class Persistencia {
     private static final Path PATH_CONSULTAS = Paths.get(DIR_DADOS, "consultas.csv");
     private static final Path PATH_ESPECIALIDADES = Paths.get(DIR_DADOS, "especialidades.csv");
     private static final Path PATH_PLANOS = Paths.get(DIR_DADOS, "planos_saude.csv");
+    private static final Path PATH_QUARTOS = Paths.get(DIR_DADOS, "quartos.csv"); // NOVO
+    private static final Path PATH_INTERNACOES = Paths.get(DIR_DADOS, "internacoes.csv"); // NOVO
     private static final String SEPARADOR = ";";
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter FORMATTER_CONSULTA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter FORMATTER_INTERNACAO = DateTimeFormatter.ofPattern("dd/MM/yyyy"); // SÓ DATA
 
-    public static void salvarPlanosDeSaude(List<PlanoDeSaude> planos) {
+    // --- MÉTODOS DE SALVAR ---
+
+    public static void salvarQuartos(List<Quarto> quartos) {
         criarDiretorioSeNaoExistir();
-        try (BufferedWriter writer = Files.newBufferedWriter(PATH_PLANOS)) {
-            writer.write("nome\n");
-            for (PlanoDeSaude p : planos) {
-                writer.write(p.getNome() + "\n");
+        try (BufferedWriter writer = Files.newBufferedWriter(PATH_QUARTOS)) {
+            writer.write("numero\n"); // Por enquanto, só precisamos guardar o número
+            for (Quarto q : quartos) {
+                writer.write(q.getNumero() + "\n");
             }
         } catch (IOException e) {
-            System.err.println("Erro ao salvar planos de saúde: " + e.getMessage());
+            System.err.println("Erro ao salvar quartos: " + e.getMessage());
+        }
+    }
+
+    public static void salvarInternacoes(List<Internacao> internacoes) {
+        criarDiretorioSeNaoExistir();
+        try (BufferedWriter writer = Files.newBufferedWriter(PATH_INTERNACOES)) {
+            writer.write("cpf_paciente;crm_medico;numero_quarto;data_entrada;data_saida\n");
+            for (Internacao i : internacoes) {
+                String dataSaidaStr = (i.getDataSaida() == null) ? "N/A" : i.getDataSaida().format(FORMATTER_INTERNACAO);
+                String linha = i.getPaciente().getCpf() + SEPARADOR +
+                               i.getMedicoResponsavel().getCrm() + SEPARADOR +
+                               i.getQuarto().getNumero() + SEPARADOR +
+                               i.getDataEntrada().format(FORMATTER_INTERNACAO) + SEPARADOR +
+                               dataSaidaStr;
+                writer.write(linha + "\n");
+            }
+        } catch (IOException e) {
+            System.err.println("Erro ao salvar internações: " + e.getMessage());
         }
     }
 
@@ -54,6 +78,31 @@ public class Persistencia {
         }
     }
 
+    public static void salvarMedicos(List<Medico> medicos) {
+        criarDiretorioSeNaoExistir();
+        try (BufferedWriter writer = Files.newBufferedWriter(PATH_MEDICOS)) {
+            writer.write("nome;cpf;crm;especialidade_nome;custo_consulta\n");
+            for (Medico m : medicos) {
+                String linha = m.getNome() + SEPARADOR + m.getCpf() + SEPARADOR + m.getCrm() + SEPARADOR + m.getEspecialidade().getNome() + SEPARADOR + m.getCustoConsulta();
+                writer.write(linha + "\n");
+            }
+        } catch (IOException e) {
+            System.err.println("Erro ao salvar médicos: " + e.getMessage());
+        }
+    }
+
+    public static void salvarPlanosDeSaude(List<PlanoDeSaude> planos) {
+        criarDiretorioSeNaoExistir();
+        try (BufferedWriter writer = Files.newBufferedWriter(PATH_PLANOS)) {
+            writer.write("nome\n");
+            for (PlanoDeSaude p : planos) {
+                writer.write(p.getNome() + "\n");
+            }
+        } catch (IOException e) {
+            System.err.println("Erro ao salvar planos de saúde: " + e.getMessage());
+        }
+    }
+
     public static void salvarEspecialidades(List<Especialidade> especialidades) {
         criarDiretorioSeNaoExistir();
         try (BufferedWriter writer = Files.newBufferedWriter(PATH_ESPECIALIDADES)) {
@@ -66,25 +115,12 @@ public class Persistencia {
         }
     }
 
-    public static void salvarMedicos(List<Medico> medicos) {
-        criarDiretorioSeNaoExistir();
-        try (BufferedWriter writer = Files.newBufferedWriter(PATH_MEDICOS)) {
-            writer.write("nome;cpf;crm;especialidade_nome;custo_consulta\n");
-            for (Medico m : medicos) {
-                String linha = m.getNome() + SEPARADOR + m.getCpf() + SEPARADOR + m.getCrm() + SEPARADOR + m.getEspecialidade().getNome() + SEPARADOR + m.getCustoConsulta();
-                writer.write(linha + "\n");
-            }
-        } catch (IOException e) {
-            System.err.println("Erro ao salvar medicos: " + e.getMessage());
-        }
-    }
-
     public static void salvarConsultas(List<Consulta> consultas) {
         criarDiretorioSeNaoExistir();
         try (BufferedWriter writer = Files.newBufferedWriter(PATH_CONSULTAS)) {
             writer.write("cpf_paciente;crm_medico;data_hora;local;status\n");
             for (Consulta c : consultas) {
-                String linha = c.getPaciente().getCpf() + SEPARADOR + c.getMedico().getCrm() + SEPARADOR + c.getDataHora().format(FORMATTER) + SEPARADOR + c.getLocal() + SEPARADOR + c.getStatus();
+                String linha = c.getPaciente().getCpf() + SEPARADOR + c.getMedico().getCrm() + SEPARADOR + c.getDataHora().format(FORMATTER_CONSULTA) + SEPARADOR + c.getLocal() + SEPARADOR + c.getStatus();
                 writer.write(linha + "\n");
             }
         } catch (IOException e) {
@@ -92,12 +128,59 @@ public class Persistencia {
         }
     }
 
+    // --- MÉTODOS DE CARREGAR ---
+
     public static void carregarDados(Hospital hospital) {
         carregarEspecialidades(hospital);
         carregarPlanosDeSaude(hospital);
         carregarPacientes(hospital);
         carregarMedicos(hospital);
+        carregarQuartos(hospital);
         carregarConsultas(hospital);
+        carregarInternacoes(hospital); // DEVE SER A ÚLTIMA, POIS DEPENDE DE TUDO
+    }
+
+    private static void carregarQuartos(Hospital hospital) {
+        if (!Files.exists(PATH_QUARTOS)) return;
+        try (BufferedReader reader = Files.newBufferedReader(PATH_QUARTOS)) {
+            reader.readLine(); // Pula cabeçalho
+            String linha;
+            while ((linha = reader.readLine()) != null) {
+                int numero = Integer.parseInt(linha);
+                hospital.cadastrarQuartoSemSalvar(numero);
+            }
+        } catch (IOException | NumberFormatException e) {
+            System.err.println("Erro ao carregar quartos: " + e.getMessage());
+        }
+    }
+
+    private static void carregarInternacoes(Hospital hospital) {
+        if (!Files.exists(PATH_INTERNACOES)) return;
+        try (BufferedReader reader = Files.newBufferedReader(PATH_INTERNACOES)) {
+            reader.readLine(); // Pula cabeçalho
+            String linha;
+            while ((linha = reader.readLine()) != null) {
+                String[] dados = linha.split(SEPARADOR);
+                Paciente p = hospital.buscarPacientePorCpf(dados[0]);
+                Medico m = hospital.buscarMedicoPorCrm(dados[1]);
+                Quarto q = hospital.buscarQuartoPorNumero(Integer.parseInt(dados[2]));
+
+                if (p != null && m != null && q != null) {
+                    LocalDate dataEntrada = LocalDate.parse(dados[3], FORMATTER_INTERNACAO);
+                    hospital.internarPacienteSemSalvar(p, m, q, dataEntrada);
+
+                    // Verifica se já houve alta
+                    if (!dados[4].equals("N/A")) {
+                        LocalDate dataSaida = LocalDate.parse(dados[4], FORMATTER_INTERNACAO);
+                        // Encontra a internação que acabamos de criar para dar a alta
+                        Internacao internacao = hospital.getInternacoes().get(hospital.getInternacoes().size() - 1);
+                        internacao.registrarAlta(dataSaida);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Erro ao carregar internações: " + e.getMessage());
+        }
     }
 
     private static void carregarEspecialidades(Hospital hospital) {
@@ -159,15 +242,14 @@ public class Persistencia {
             String linha;
             while ((linha = reader.readLine()) != null) {
                 String[] dados = linha.split(SEPARADOR);
-                String nomeEspecialidade = dados[3];
-                Especialidade especialidade = hospital.buscarEspecialidadePorNome(nomeEspecialidade);
+                Especialidade especialidade = hospital.buscarEspecialidadePorNome(dados[3]);
                 if (especialidade != null) {
                     double custoConsulta = Double.parseDouble(dados[4]);
                     hospital.cadastrarMedicoSemSalvar(dados[0], dados[1], dados[2], especialidade, custoConsulta);
                 }
             }
         } catch (IOException | NumberFormatException e) {
-            System.err.println("Erro ao carregar medicos: " + e.getMessage());
+            System.err.println("Erro ao carregar médicos: " + e.getMessage());
         }
     }
 
@@ -181,7 +263,7 @@ public class Persistencia {
                 Paciente p = hospital.buscarPacientePorCpf(dados[0]);
                 Medico m = hospital.buscarMedicoPorCrm(dados[1]);
                 if (p != null && m != null) {
-                    LocalDateTime dataHora = LocalDateTime.parse(dados[2], FORMATTER);
+                    LocalDateTime dataHora = LocalDateTime.parse(dados[2], FORMATTER_CONSULTA);
                     hospital.agendarConsultaSemSalvar(p, m, dataHora, dados[3]);
                     if (dados.length > 4) {
                         Consulta consultaRecemCriada = hospital.getConsultas().get(hospital.getConsultas().size() - 1);

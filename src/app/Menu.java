@@ -1,17 +1,21 @@
 package app;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import entities.*;
+import utils.Persistencia;
 
 public class Menu {
 
     private Hospital hospital;
     private Scanner scanner;
-    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private DateTimeFormatter formatterConsulta = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private DateTimeFormatter formatterInternacao = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     public Menu(Hospital hospital) {
         this.hospital = hospital;
@@ -33,9 +37,15 @@ public class Menu {
             System.out.println("7. Cadastrar Plano de Saúde");
             System.out.println("8. Listar Planos de Saúde");
             System.out.println("9. Adicionar Desconto a Plano");
-            System.out.println("\n---- OPERAÇÕES ----");
-            System.out.println("10. Agendar Consulta");
-            System.out.println("11. Listar Consultas");
+            System.out.println("\n---- GESTÃO DE INFRAESTRUTURA ----");
+            System.out.println("10. Cadastrar Quarto");
+            System.out.println("11. Listar Quartos");
+            System.out.println("\n---- OPERAÇÕES HOSPITALARES ----");
+            System.out.println("12. Agendar Consulta");
+            System.out.println("13. Listar Consultas");
+            System.out.println("14. Internar Paciente");
+            System.out.println("15. Dar Alta a Paciente");
+            System.out.println("16. Listar Internações");
             System.out.println("0. Sair");
             System.out.print("Escolha uma opção: ");
 
@@ -51,9 +61,14 @@ public class Menu {
                     case 7: cadastrarPlanoDeSaude(); break;
                     case 8: listarPlanosDeSaude(); break;
                     case 9: adicionarDescontoAPlano(); break;
-                    case 10: agendarConsulta(); break;
-                    case 11: listarConsultas(); break;
-                    case 0: System.out.println("Saindo do sistema..."); break;
+                    case 10: cadastrarQuarto(); break;
+                    case 11: listarQuartos(); break;
+                    case 12: agendarConsulta(); break;
+                    case 13: listarConsultas(); break;
+                    case 14: internarPaciente(); break;
+                    case 15: darAltaPaciente(); break;
+                    case 16: listarInternacoes(); break;
+                    case 0: System.out.println("A sair do sistema..."); break;
                     default: System.out.println("Opção inválida.");
                 }
             } catch (Exception e) {
@@ -64,6 +79,107 @@ public class Menu {
         scanner.close();
     }
 
+    // --- MÉTODOS DE INTERNAÇÃO E QUARTOS ---
+
+    private void cadastrarQuarto() {
+        System.out.println("\n--- Cadastro de Quarto ---");
+        System.out.print("Digite o número do quarto: ");
+        int numero = Integer.parseInt(scanner.nextLine());
+        hospital.cadastrarQuarto(numero);
+    }
+
+    private void listarQuartos() {
+        System.out.println("\n--- Lista de Todos os Quartos ---");
+        List<Quarto> quartos = hospital.getQuartos();
+        if (quartos.isEmpty()) {
+            System.out.println("Nenhum quarto cadastrado.");
+        } else {
+            for (int i = 0; i < quartos.size(); i++) {
+                System.out.println((i + 1) + ". " + quartos.get(i).toString());
+            }
+        }
+    }
+
+    private void internarPaciente() {
+        System.out.println("\n--- Internar Paciente ---");
+        if (hospital.getPacientes().isEmpty() || hospital.getMedicos().isEmpty() || hospital.getQuartosLivres().isEmpty()) {
+            System.out.println("Erro: É necessário ter pacientes, médicos e quartos livres cadastrados para realizar uma internação.");
+            return;
+        }
+
+        System.out.println("Selecione o paciente a ser internado:");
+        listarPacientes();
+        System.out.print("Escolha o número do paciente: ");
+        int indicePaciente = Integer.parseInt(scanner.nextLine()) - 1;
+        Paciente pacienteEscolhido = hospital.getPacientes().get(indicePaciente);
+
+        System.out.println("\nSelecione o médico responsável:");
+        listarMedicos();
+        System.out.print("Escolha o número do médico: ");
+        int indiceMedico = Integer.parseInt(scanner.nextLine()) - 1;
+        Medico medicoEscolhido = hospital.getMedicos().get(indiceMedico);
+
+        System.out.println("\nSelecione um quarto livre:");
+        List<Quarto> quartosLivres = hospital.getQuartosLivres();
+        for (int i = 0; i < quartosLivres.size(); i++) {
+            System.out.println((i + 1) + ". " + quartosLivres.get(i).toString());
+        }
+        System.out.print("Escolha o número do quarto: ");
+        int indiceQuarto = Integer.parseInt(scanner.nextLine()) - 1;
+        Quarto quartoEscolhido = quartosLivres.get(indiceQuarto);
+
+        System.out.print("Digite a data de entrada (dd/MM/yyyy): ");
+        String dataEntradaStr = scanner.nextLine();
+        LocalDate dataEntrada = LocalDate.parse(dataEntradaStr, formatterInternacao);
+
+        hospital.internarPaciente(pacienteEscolhido, medicoEscolhido, quartoEscolhido, dataEntrada);
+    }
+
+    private void darAltaPaciente() {
+        System.out.println("\n--- Dar Alta a Paciente ---");
+        List<Internacao> internados = new ArrayList<>();
+        for (Internacao i : hospital.getInternacoes()) {
+            if (i.getDataSaida() == null) {
+                internados.add(i);
+            }
+        }
+
+        if (internados.isEmpty()) {
+            System.out.println("Não há pacientes internados no momento.");
+            return;
+        }
+
+        System.out.println("Selecione a internação para dar alta:");
+        for (int i = 0; i < internados.size(); i++) {
+            System.out.println((i + 1) + ". " + internados.get(i).toString());
+        }
+        System.out.print("Escolha o número da internação: ");
+        int indiceInternacao = Integer.parseInt(scanner.nextLine()) - 1;
+        Internacao internacaoEscolhida = internados.get(indiceInternacao);
+
+        System.out.print("Digite a data de alta (dd/MM/yyyy): ");
+        String dataSaidaStr = scanner.nextLine();
+        LocalDate dataSaida = LocalDate.parse(dataSaidaStr, formatterInternacao);
+
+        internacaoEscolhida.registrarAlta(dataSaida);
+        Persistencia.salvarInternacoes(hospital.getInternacoes()); // Salva o estado atualizado
+        System.out.println("Alta registrada com sucesso para o paciente " + internacaoEscolhida.getPaciente().getNome() + ".");
+    }
+
+    private void listarInternacoes() {
+        System.out.println("\n--- Histórico de Internações ---");
+        List<Internacao> internacoes = hospital.getInternacoes();
+        if (internacoes.isEmpty()) {
+            System.out.println("Nenhuma internação registrada.");
+        } else {
+            for (Internacao i : internacoes) {
+                System.out.println(i.toString());
+            }
+        }
+    }
+
+    // --- MÉTODOS EXISTENTES ---
+    
     private void cadastrarPaciente() {
         System.out.println("\n--- Cadastro de Paciente ---");
         System.out.print("Nome: ");
@@ -234,7 +350,7 @@ public class Menu {
             System.out.print("Digite o local da consulta (ex: Consultório 3): ");
             String local = scanner.nextLine();
             try {
-                LocalDateTime dataHora = LocalDateTime.parse(dataHoraString, formatter);
+                LocalDateTime dataHora = LocalDateTime.parse(dataHoraString, formatterConsulta);
                 hospital.agendarConsulta(pacienteEscolhido, medicoEscolhido, dataHora, local);
                 System.out.println("Consulta agendada com sucesso!");
             } catch (DateTimeParseException e) {
@@ -246,16 +362,16 @@ public class Menu {
     }
 
     private void listarConsultas() {
-        System.out.println("\n--- Lista de Consultas Agendadas ---");
+        System.out.println("\n--- Histórico de Consultas ---");
         List<Consulta> consultas = hospital.getConsultas();
         if (consultas.isEmpty()) {
-            System.out.println("Nenhuma consulta agendada.");
+            System.out.println("Nenhuma consulta registada.");
         } else {
             for (Consulta consulta : consultas) {
                 System.out.println("---------------------------------");
                 System.out.println("Paciente: " + consulta.getPaciente().getNome());
                 System.out.println("Médico: " + consulta.getMedico().getNome() + " (" + consulta.getMedico().getEspecialidade() + ")");
-                System.out.println("Data/Hora: " + consulta.getDataHora().format(formatter));
+                System.out.println("Data/Hora: " + consulta.getDataHora().format(formatterConsulta));
                 System.out.println("Local: " + consulta.getLocal());
                 System.out.println("Status: " + consulta.getStatus());
             }
