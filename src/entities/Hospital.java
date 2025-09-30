@@ -31,9 +31,55 @@ public class Hospital {
         System.out.println("A carregar dados existentes...");
         Persistencia.carregarDados(this);
     }
+    
+    private boolean isCpfEmUso(String cpf) {
+        for (Paciente p : this.pacientes) {
+            if (p.getCpf().equals(cpf)) {
+                return true;
+            }
+        }
+        for (Medico m : this.medicos) {
+            if (m.getCpf().equals(cpf)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-    // --- MÉTODOS DE RELATÓRIOS ---
+    public void cadastrarPaciente(String nome, String cpf, int idade) {
+        if (isCpfEmUso(cpf)) {
+            System.out.println("Erro: Já existe uma pessoa (paciente ou médico) cadastrada com este CPF.");
+            return;
+        }
+        cadastrarPacienteSemSalvar(nome, cpf, idade);
+        System.out.println("Paciente '" + nome + "' (Normal) cadastrado com sucesso!");
+        Persistencia.salvarPacientes(this.pacientes);
+    }
 
+    public void cadastrarPaciente(String nome, String cpf, int idade, PlanoDeSaude plano) {
+        if (isCpfEmUso(cpf)) {
+            System.out.println("Erro: Já existe uma pessoa (paciente ou médico) cadastrada com este CPF.");
+            return;
+        }
+        cadastrarPacienteComPlanoSemSalvar(nome, cpf, idade, plano);
+        System.out.println("Paciente '" + nome + "' (Plano: " + plano.getNome() + ") cadastrado com sucesso!");
+        Persistencia.salvarPacientes(this.pacientes);
+    }
+
+    public void cadastrarMedico(String nome, String cpf, String crm, Especialidade especialidade, double custoConsulta) {
+        if (isCpfEmUso(cpf)) {
+            System.out.println("Erro: Já existe uma pessoa (paciente ou médico) cadastrada com este CPF.");
+            return;
+        }
+        if (buscarMedicoPorCrm(crm) != null) {
+            System.out.println("Erro: Já existe um médico cadastrado com este CRM.");
+            return;
+        }
+        cadastrarMedicoSemSalvar(nome, cpf, crm, especialidade, custoConsulta);
+        System.out.println("Médico '" + nome + "' cadastrado com sucesso!");
+        Persistencia.salvarMedicos(this.medicos);
+    }
+    
     public List<Internacao> getPacientesInternados() {
         return this.internacoes.stream()
             .filter(i -> i.getDataSaida() == null)
@@ -63,8 +109,6 @@ public class Hospital {
             .max(Map.Entry.comparingByValue())
             .map(Map.Entry::getKey);
     }
-
-    // --- MÉTODOS EXISTENTES ---
 
     public void atualizarConsultasNoArquivo() {
         Persistencia.salvarConsultas(this.consultas);
@@ -96,26 +140,6 @@ public class Hospital {
         Persistencia.salvarInternacoes(this.internacoes);
     }
 
-    public void cadastrarPaciente(String nome, String cpf, int idade) {
-        if (buscarPacientePorCpf(cpf) != null) {
-            System.out.println("Erro: Já existe um paciente cadastrado com o CPF " + cpf);
-            return;
-        }
-        cadastrarPacienteSemSalvar(nome, cpf, idade);
-        System.out.println("Paciente '" + nome + "' (Normal) cadastrado com sucesso!");
-        Persistencia.salvarPacientes(this.pacientes);
-    }
-
-    public void cadastrarPaciente(String nome, String cpf, int idade, PlanoDeSaude plano) {
-        if (buscarPacientePorCpf(cpf) != null) {
-            System.out.println("Erro: Já existe um paciente cadastrado com o CPF " + cpf);
-            return;
-        }
-        cadastrarPacienteComPlanoSemSalvar(nome, cpf, idade, plano);
-        System.out.println("Paciente '" + nome + "' (Plano: " + plano.getNome() + ") cadastrado com sucesso!");
-        Persistencia.salvarPacientes(this.pacientes);
-    }
-
     public void cadastrarEspecialidade(String nome) {
         if (buscarEspecialidadePorNome(nome) != null) {
             System.out.println("Erro: Especialidade já cadastrada.");
@@ -124,16 +148,6 @@ public class Hospital {
         cadastrarEspecialidadeSemSalvar(nome);
         System.out.println("Especialidade '" + nome + "' cadastrada com sucesso!");
         Persistencia.salvarEspecialidades(this.especialidades);
-    }
-
-    public void cadastrarMedico(String nome, String cpf, String crm, Especialidade especialidade, double custoConsulta) {
-        if (buscarMedicoPorCrm(crm) != null) {
-            System.out.println("Erro: Já existe um médico cadastrado com o CRM " + crm);
-            return;
-        }
-        cadastrarMedicoSemSalvar(nome, cpf, crm, especialidade, custoConsulta);
-        System.out.println("Médico '" + nome + "' cadastrado com sucesso!");
-        Persistencia.salvarMedicos(this.medicos);
     }
     
     public void cadastrarPlanoDeSaude(String nome) {
