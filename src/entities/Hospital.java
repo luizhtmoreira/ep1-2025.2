@@ -11,27 +11,35 @@ public class Hospital {
     private List<Medico> medicos;
     private List<Consulta> consultas;
     private List<Especialidade> especialidades;
-    private List<PlanoDeSaude> planosDeSaude; // ADICIONE ESTA LINHA
+    private List<PlanoDeSaude> planosDeSaude;
 
     public Hospital() {
         this.pacientes = new ArrayList<>();
         this.medicos = new ArrayList<>();
         this.consultas = new ArrayList<>();
         this.especialidades = new ArrayList<>();
-        this.planosDeSaude = new ArrayList<>(); // ADICIONE ESTA LINHA
+        this.planosDeSaude = new ArrayList<>();
         System.out.println("Carregando dados existentes...");
         Persistencia.carregarDados(this);
     }
-    
-    // --- MÉTODOS PÚBLICOS QUE SALVAM ---
 
     public void cadastrarPaciente(String nome, String cpf, int idade) {
-        if(buscarPacientePorCpf(cpf) != null) {
-             System.out.println("Erro: Já existe um paciente cadastrado com o CPF " + cpf);
-             return;
+        if (buscarPacientePorCpf(cpf) != null) {
+            System.out.println("Erro: Já existe um paciente cadastrado com o CPF " + cpf);
+            return;
         }
         cadastrarPacienteSemSalvar(nome, cpf, idade);
-        System.out.println("Paciente '" + nome + "' cadastrado com sucesso!");
+        System.out.println("Paciente '" + nome + "' (Normal) cadastrado com sucesso!");
+        Persistencia.salvarPacientes(this.pacientes);
+    }
+
+    public void cadastrarPaciente(String nome, String cpf, int idade, PlanoDeSaude plano) {
+        if (buscarPacientePorCpf(cpf) != null) {
+            System.out.println("Erro: Já existe um paciente cadastrado com o CPF " + cpf);
+            return;
+        }
+        cadastrarPacienteComPlanoSemSalvar(nome, cpf, idade, plano);
+        System.out.println("Paciente '" + nome + "' (Plano: " + plano.getNome() + ") cadastrado com sucesso!");
         Persistencia.salvarPacientes(this.pacientes);
     }
 
@@ -46,13 +54,23 @@ public class Hospital {
     }
 
     public void cadastrarMedico(String nome, String cpf, String crm, Especialidade especialidade) {
-        if(buscarMedicoPorCrm(crm) != null) {
+        if (buscarMedicoPorCrm(crm) != null) {
             System.out.println("Erro: Já existe um médico cadastrado com o CRM " + crm);
             return;
         }
         cadastrarMedicoSemSalvar(nome, cpf, crm, especialidade);
         System.out.println("Médico '" + nome + "' cadastrado com sucesso!");
         Persistencia.salvarMedicos(this.medicos);
+    }
+    
+    public void cadastrarPlanoDeSaude(String nome) {
+        if (buscarPlanoPorNome(nome) != null) {
+            System.out.println("Erro: Plano de saúde já cadastrado.");
+            return;
+        }
+        cadastrarPlanoDeSaudeSemSalvar(nome);
+        System.out.println("Plano '" + nome + "' cadastrado com sucesso!");
+        Persistencia.salvarPlanosDeSaude(this.planosDeSaude);
     }
 
     public void agendarConsulta(Paciente paciente, Medico medico, LocalDateTime dataHora, String local) {
@@ -67,10 +85,13 @@ public class Hospital {
         Persistencia.salvarConsultas(this.consultas);
     }
 
-    // --- MÉTODOS "INTERNOS" SEM SALVAR (USADOS PELA PERSISTÊNCIA) ---
-
     public void cadastrarPacienteSemSalvar(String nome, String cpf, int idade) {
         Paciente novoPaciente = new Paciente(nome, cpf, idade);
+        this.pacientes.add(novoPaciente);
+    }
+
+    public void cadastrarPacienteComPlanoSemSalvar(String nome, String cpf, int idade, PlanoDeSaude plano) {
+        PacienteComPlano novoPaciente = new PacienteComPlano(nome, cpf, idade, plano);
         this.pacientes.add(novoPaciente);
     }
 
@@ -78,45 +99,22 @@ public class Hospital {
         Especialidade novaEspecialidade = new Especialidade(nome);
         this.especialidades.add(novaEspecialidade);
     }
+    
+    public void cadastrarPlanoDeSaudeSemSalvar(String nome) {
+        PlanoDeSaude novoPlano = new PlanoDeSaude(nome);
+        this.planosDeSaude.add(novoPlano);
+    }
 
     public void cadastrarMedicoSemSalvar(String nome, String cpf, String crm, Especialidade especialidade) {
         Medico novoMedico = new Medico(nome, cpf, crm, especialidade);
         this.medicos.add(novoMedico);
     }
-    
+
     public void agendarConsultaSemSalvar(Paciente p, Medico m, LocalDateTime dataHora, String local) {
         Consulta novaConsulta = new Consulta(p, m, dataHora, local);
         this.consultas.add(novaConsulta);
     }
 
-    // --- MÉTODOS DE PLANO DE SAÚDE (NOVOS) ---
-
-public void cadastrarPlanoDeSaude(String nome) {
-    if (buscarPlanoPorNome(nome) != null) {
-        System.out.println("Erro: Plano de saúde já cadastrado.");
-        return;
-    }
-    PlanoDeSaude novoPlano = new PlanoDeSaude(nome);
-    this.planosDeSaude.add(novoPlano);
-    System.out.println("Plano '" + nome + "' cadastrado com sucesso!");
-    // Persistencia.salvarPlanos(this.planosDeSaude); // Adicionaremos a persistência depois
-}
-
-public PlanoDeSaude buscarPlanoPorNome(String nome) {
-    for (PlanoDeSaude p : this.planosDeSaude) {
-        if (p.getNome().equalsIgnoreCase(nome)) {
-            return p;
-        }
-    }
-    return null;
-}
-
-public List<PlanoDeSaude> getPlanosDeSaude() {
-    return planosDeSaude;
-}
-
-    // --- MÉTODOS DE BUSCA E GETTERS ---
-    
     public Paciente buscarPacientePorCpf(String cpf) {
         for (Paciente p : this.pacientes) {
             if (p.getCpf().equals(cpf)) {
@@ -143,20 +141,19 @@ public List<PlanoDeSaude> getPlanosDeSaude() {
         }
         return null;
     }
-
-    public List<Paciente> getPacientes() {
-        return pacientes;
+    
+    public PlanoDeSaude buscarPlanoPorNome(String nome) {
+        for (PlanoDeSaude p : this.planosDeSaude) {
+            if (p.getNome().equalsIgnoreCase(nome)) {
+                return p;
+            }
+        }
+        return null;
     }
 
-    public List<Medico> getMedicos() {
-        return medicos;
-    }
-
-    public List<Consulta> getConsultas() {
-        return consultas;
-    }
-
-    public List<Especialidade> getEspecialidades() {
-        return especialidades;
-    }
+    public List<Paciente> getPacientes() { return pacientes; }
+    public List<Medico> getMedicos() { return medicos; }
+    public List<Consulta> getConsultas() { return consultas; }
+    public List<Especialidade> getEspecialidades() { return especialidades; }
+    public List<PlanoDeSaude> getPlanosDeSaude() { return planosDeSaude; }
 }
