@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import entities.*; // Usamos * para importar todas as entidades de uma vez
+import entities.*;
 
 public class Persistencia {
 
@@ -69,9 +69,9 @@ public class Persistencia {
     public static void salvarMedicos(List<Medico> medicos) {
         criarDiretorioSeNaoExistir();
         try (BufferedWriter writer = Files.newBufferedWriter(PATH_MEDICOS)) {
-            writer.write("nome;cpf;crm;especialidade_nome\n");
+            writer.write("nome;cpf;crm;especialidade_nome;custo_consulta\n");
             for (Medico m : medicos) {
-                String linha = m.getNome() + SEPARADOR + m.getCpf() + SEPARADOR + m.getCrm() + SEPARADOR + m.getEspecialidade().getNome();
+                String linha = m.getNome() + SEPARADOR + m.getCpf() + SEPARADOR + m.getCrm() + SEPARADOR + m.getEspecialidade().getNome() + SEPARADOR + m.getCustoConsulta();
                 writer.write(linha + "\n");
             }
         } catch (IOException e) {
@@ -162,10 +162,11 @@ public class Persistencia {
                 String nomeEspecialidade = dados[3];
                 Especialidade especialidade = hospital.buscarEspecialidadePorNome(nomeEspecialidade);
                 if (especialidade != null) {
-                    hospital.cadastrarMedicoSemSalvar(dados[0], dados[1], dados[2], especialidade);
+                    double custoConsulta = Double.parseDouble(dados[4]);
+                    hospital.cadastrarMedicoSemSalvar(dados[0], dados[1], dados[2], especialidade, custoConsulta);
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | NumberFormatException e) {
             System.err.println("Erro ao carregar medicos: " + e.getMessage());
         }
     }

@@ -53,12 +53,12 @@ public class Hospital {
         Persistencia.salvarEspecialidades(this.especialidades);
     }
 
-    public void cadastrarMedico(String nome, String cpf, String crm, Especialidade especialidade) {
+    public void cadastrarMedico(String nome, String cpf, String crm, Especialidade especialidade, double custoConsulta) {
         if (buscarMedicoPorCrm(crm) != null) {
             System.out.println("Erro: Já existe um médico cadastrado com o CRM " + crm);
             return;
         }
-        cadastrarMedicoSemSalvar(nome, cpf, crm, especialidade);
+        cadastrarMedicoSemSalvar(nome, cpf, crm, especialidade, custoConsulta);
         System.out.println("Médico '" + nome + "' cadastrado com sucesso!");
         Persistencia.salvarMedicos(this.medicos);
     }
@@ -81,7 +81,6 @@ public class Hospital {
             }
         }
         agendarConsultaSemSalvar(paciente, medico, dataHora, local);
-        System.out.println("Consulta agendada com sucesso!");
         Persistencia.salvarConsultas(this.consultas);
     }
 
@@ -105,8 +104,8 @@ public class Hospital {
         this.planosDeSaude.add(novoPlano);
     }
 
-    public void cadastrarMedicoSemSalvar(String nome, String cpf, String crm, Especialidade especialidade) {
-        Medico novoMedico = new Medico(nome, cpf, crm, especialidade);
+    public void cadastrarMedicoSemSalvar(String nome, String cpf, String crm, Especialidade especialidade, double custoConsulta) {
+        Medico novoMedico = new Medico(nome, cpf, crm, especialidade, custoConsulta);
         this.medicos.add(novoMedico);
     }
 

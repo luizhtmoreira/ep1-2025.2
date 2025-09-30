@@ -3,13 +3,14 @@ package entities;
 public class Medico extends Pessoa {
 
     private String crm;
-    private Especialidade especialidade; // MUDANÇA AQUI: de String para Especialidade
+    private Especialidade especialidade;
+    private double custoConsulta; // NOVO ATRIBUTO
 
-    // O construtor agora recebe o objeto Especialidade
-    public Medico(String nome, String cpf, String crm, Especialidade especialidade) {
+    public Medico(String nome, String cpf, String crm, Especialidade especialidade, double custoConsulta) {
         super(nome, cpf);
         this.crm = crm;
         this.especialidade = especialidade;
+        this.custoConsulta = custoConsulta;
     }
 
     public String getCrm() {
@@ -20,7 +21,6 @@ public class Medico extends Pessoa {
         this.crm = crm;
     }
 
-    // O getter e setter agora trabalham com o objeto Especialidade
     public Especialidade getEspecialidade() {
         return especialidade;
     }
@@ -28,10 +28,17 @@ public class Medico extends Pessoa {
     public void setEspecialidade(Especialidade especialidade) {
         this.especialidade = especialidade;
     }
+    
+    public double getCustoConsulta() {
+        return custoConsulta;
+    }
+
+    public void setCustoConsulta(double custoConsulta) {
+        this.custoConsulta = custoConsulta;
+    }
 
     @Override
     public String toString() {
-        // A mudança é transparente aqui, pois o toString() da especialidade será chamado
-        return "Medico [" + super.toString() + ", CRM: " + crm + ", Especialidade: " + especialidade + "]";
+        return "Medico [" + super.toString() + ", CRM: " + crm + ", Especialidade: " + especialidade + ", Custo: R$" + String.format("%.2f", custoConsulta) + "]";
     }
 }

@@ -32,6 +32,7 @@ public class Menu {
             System.out.println("\n---- GESTÃO DE PLANOS DE SAÚDE ----");
             System.out.println("7. Cadastrar Plano de Saúde");
             System.out.println("8. Listar Planos de Saúde");
+            System.out.println("9. Adicionar Desconto a Plano");
             System.out.println("\n---- OPERAÇÕES ----");
             System.out.println("10. Agendar Consulta");
             System.out.println("11. Listar Consultas");
@@ -49,6 +50,7 @@ public class Menu {
                     case 6: listarMedicos(); break;
                     case 7: cadastrarPlanoDeSaude(); break;
                     case 8: listarPlanosDeSaude(); break;
+                    case 9: adicionarDescontoAPlano(); break;
                     case 10: agendarConsulta(); break;
                     case 11: listarConsultas(); break;
                     case 0: System.out.println("Saindo do sistema..."); break;
@@ -132,12 +134,17 @@ public class Menu {
         String cpf = scanner.nextLine();
         System.out.print("CRM: ");
         String crm = scanner.nextLine();
+        
         System.out.println("Selecione a especialidade:");
         listarEspecialidades();
         System.out.print("Escolha o número da especialidade: ");
         int indiceEspecialidade = Integer.parseInt(scanner.nextLine()) - 1;
         Especialidade especialidadeEscolhida = hospital.getEspecialidades().get(indiceEspecialidade);
-        hospital.cadastrarMedico(nome, cpf, crm, especialidadeEscolhida);
+        
+        System.out.print("Custo base da consulta (ex: 150.00): ");
+        double custoConsulta = Double.parseDouble(scanner.nextLine());
+        
+        hospital.cadastrarMedico(nome, cpf, crm, especialidadeEscolhida, custoConsulta);
     }
 
     private void listarMedicos() {
@@ -171,6 +178,32 @@ public class Menu {
         }
     }
 
+    private void adicionarDescontoAPlano() {
+        System.out.println("\n--- Adicionar Desconto a Plano de Saúde ---");
+        if (hospital.getPlanosDeSaude().isEmpty() || hospital.getEspecialidades().isEmpty()) {
+            System.out.println("Erro: É necessário ter ao menos um plano e uma especialidade cadastrados.");
+            return;
+        }
+
+        System.out.println("Selecione o plano de saúde:");
+        listarPlanosDeSaude();
+        System.out.print("Escolha o número do plano: ");
+        int indicePlano = Integer.parseInt(scanner.nextLine()) - 1;
+        PlanoDeSaude planoEscolhido = hospital.getPlanosDeSaude().get(indicePlano);
+
+        System.out.println("\nSelecione a especialidade para o desconto:");
+        listarEspecialidades();
+        System.out.print("Escolha o número da especialidade: ");
+        int indiceEspecialidade = Integer.parseInt(scanner.nextLine()) - 1;
+        Especialidade especialidadeEscolhida = hospital.getEspecialidades().get(indiceEspecialidade);
+
+        System.out.print("Digite o desconto (ex: 0.2 para 20%): ");
+        double desconto = Double.parseDouble(scanner.nextLine());
+
+        planoEscolhido.adicionarDesconto(especialidadeEscolhida, desconto);
+        System.out.println("Desconto adicionado com sucesso!");
+    }
+
     private void agendarConsulta() {
         System.out.println("\n--- Agendamento de Consulta ---");
         if (hospital.getPacientes().isEmpty() || hospital.getMedicos().isEmpty()) {
@@ -182,20 +215,33 @@ public class Menu {
         System.out.print("Escolha o número do paciente: ");
         int indicePaciente = Integer.parseInt(scanner.nextLine()) - 1;
         Paciente pacienteEscolhido = hospital.getPacientes().get(indicePaciente);
+
         System.out.println("\nSelecione o médico:");
         listarMedicos();
         System.out.print("Escolha o número do médico: ");
         int indiceMedico = Integer.parseInt(scanner.nextLine()) - 1;
         Medico medicoEscolhido = hospital.getMedicos().get(indiceMedico);
-        System.out.print("Digite a data e hora da consulta (formato dd/MM/yyyy HH:mm): ");
-        String dataHoraString = scanner.nextLine();
-        System.out.print("Digite o local da consulta (ex: Consultório 3): ");
-        String local = scanner.nextLine();
-        try {
-            LocalDateTime dataHora = LocalDateTime.parse(dataHoraString, formatter);
-            hospital.agendarConsulta(pacienteEscolhido, medicoEscolhido, dataHora, local);
-        } catch (DateTimeParseException e) {
-            System.out.println("Erro: Formato de data e hora inválido. Use o formato dd/MM/yyyy HH:mm.");
+
+        double custoFinal = pacienteEscolhido.calcularCustoConsulta(medicoEscolhido);
+        System.out.println("Custo estimado da consulta: R$" + String.format("%.2f", custoFinal));
+        
+        System.out.print("Confirmar agendamento? (S/N): ");
+        String confirmacao = scanner.nextLine();
+
+        if (confirmacao.equalsIgnoreCase("S")) {
+            System.out.print("Digite a data e hora da consulta (formato dd/MM/yyyy HH:mm): ");
+            String dataHoraString = scanner.nextLine();
+            System.out.print("Digite o local da consulta (ex: Consultório 3): ");
+            String local = scanner.nextLine();
+            try {
+                LocalDateTime dataHora = LocalDateTime.parse(dataHoraString, formatter);
+                hospital.agendarConsulta(pacienteEscolhido, medicoEscolhido, dataHora, local);
+                System.out.println("Consulta agendada com sucesso!");
+            } catch (DateTimeParseException e) {
+                System.out.println("Erro: Formato de data e hora inválido. Use o formato dd/MM/yyyy HH:mm.");
+            }
+        } else {
+            System.out.println("Agendamento cancelado.");
         }
     }
 
