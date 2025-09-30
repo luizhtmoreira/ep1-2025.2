@@ -29,6 +29,11 @@ public class Hospital {
         Persistencia.carregarDados(this);
     }
 
+    // --- NOVO MÉTODO AUXILIAR ---
+    public void atualizarConsultasNoArquivo() {
+        Persistencia.salvarConsultas(this.consultas);
+    }
+
     // --- MÉTODOS PÚBLICOS QUE SALVAM ---
 
     public void cadastrarQuarto(int numero) {

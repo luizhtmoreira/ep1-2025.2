@@ -7,6 +7,8 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
+
 import entities.*;
 import utils.Persistencia;
 
@@ -42,10 +44,11 @@ public class Menu {
             System.out.println("11. Listar Quartos");
             System.out.println("\n---- OPERAÇÕES HOSPITALARES ----");
             System.out.println("12. Agendar Consulta");
-            System.out.println("13. Listar Consultas");
-            System.out.println("14. Internar Paciente");
-            System.out.println("15. Dar Alta a Paciente");
-            System.out.println("16. Listar Internações");
+            System.out.println("13. Gerir Consulta (Concluir/Cancelar)");
+            System.out.println("14. Listar Consultas");
+            System.out.println("15. Internar Paciente");
+            System.out.println("16. Dar Alta a Paciente");
+            System.out.println("17. Listar Internações");
             System.out.println("0. Sair");
             System.out.print("Escolha uma opção: ");
 
@@ -64,10 +67,11 @@ public class Menu {
                     case 10: cadastrarQuarto(); break;
                     case 11: listarQuartos(); break;
                     case 12: agendarConsulta(); break;
-                    case 13: listarConsultas(); break;
-                    case 14: internarPaciente(); break;
-                    case 15: darAltaPaciente(); break;
-                    case 16: listarInternacoes(); break;
+                    case 13: gerirConsulta(); break;
+                    case 14: listarConsultas(); break;
+                    case 15: internarPaciente(); break;
+                    case 16: darAltaPaciente(); break;
+                    case 17: listarInternacoes(); break;
                     case 0: System.out.println("A sair do sistema..."); break;
                     default: System.out.println("Opção inválida.");
                 }
@@ -78,8 +82,50 @@ public class Menu {
         }
         scanner.close();
     }
+    
+    private void gerirConsulta() {
+        System.out.println("\n--- Gerir Consulta ---");
+        
+        List<Consulta> consultasAgendadas = hospital.getConsultas().stream()
+            .filter(c -> c.getStatus().equals("AGENDADA"))
+            .collect(Collectors.toList());
 
-    // --- MÉTODOS DE INTERNAÇÃO E QUARTOS ---
+        if (consultasAgendadas.isEmpty()) {
+            System.out.println("Não há consultas agendadas para gerir.");
+            return;
+        }
+
+        System.out.println("Selecione a consulta a gerir:");
+        for (int i = 0; i < consultasAgendadas.size(); i++) {
+            System.out.println((i + 1) + ". " + consultasAgendadas.get(i).toString());
+        }
+        System.out.print("Escolha o número da consulta: ");
+        int indiceConsulta = Integer.parseInt(scanner.nextLine()) - 1;
+        Consulta consultaEscolhida = consultasAgendadas.get(indiceConsulta);
+
+        System.out.println("\nO que deseja fazer?");
+        System.out.println("1. Concluir Consulta");
+        System.out.println("2. Cancelar Consulta");
+        System.out.print("Escolha uma opção: ");
+        int acao = Integer.parseInt(scanner.nextLine());
+
+        if (acao == 1) {
+            System.out.print("Digite o diagnóstico: ");
+            String diagnostico = scanner.nextLine();
+            System.out.print("Digite a prescrição: ");
+            String prescricao = scanner.nextLine();
+            consultaEscolhida.concluirConsulta(diagnostico, prescricao);
+            System.out.println("Consulta concluída com sucesso!");
+        } else if (acao == 2) {
+            consultaEscolhida.cancelarConsulta();
+            System.out.println("Consulta cancelada com sucesso!");
+        } else {
+            System.out.println("Ação inválida.");
+            return;
+        }
+        
+        hospital.atualizarConsultasNoArquivo();
+    }
 
     private void cadastrarQuarto() {
         System.out.println("\n--- Cadastro de Quarto ---");
@@ -162,7 +208,7 @@ public class Menu {
         LocalDate dataSaida = LocalDate.parse(dataSaidaStr, formatterInternacao);
 
         internacaoEscolhida.registrarAlta(dataSaida);
-        Persistencia.salvarInternacoes(hospital.getInternacoes()); // Salva o estado atualizado
+        Persistencia.salvarInternacoes(hospital.getInternacoes());
         System.out.println("Alta registrada com sucesso para o paciente " + internacaoEscolhida.getPaciente().getNome() + ".");
     }
 
@@ -178,8 +224,6 @@ public class Menu {
         }
     }
 
-    // --- MÉTODOS EXISTENTES ---
-    
     private void cadastrarPaciente() {
         System.out.println("\n--- Cadastro de Paciente ---");
         System.out.print("Nome: ");
@@ -374,6 +418,10 @@ public class Menu {
                 System.out.println("Data/Hora: " + consulta.getDataHora().format(formatterConsulta));
                 System.out.println("Local: " + consulta.getLocal());
                 System.out.println("Status: " + consulta.getStatus());
+                if (!consulta.getDiagnostico().isEmpty()) {
+                    System.out.println("Diagnóstico: " + consulta.getDiagnostico());
+                    System.out.println("Prescrição: " + consulta.getPrescricao());
+                }
             }
             System.out.println("---------------------------------");
         }
